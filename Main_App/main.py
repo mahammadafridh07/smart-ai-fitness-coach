@@ -67,7 +67,9 @@ def initialize_voice_pipeline():
 
 
 def main():
+
     base_dir = Path(__file__).resolve().parent
+
     st.set_page_config(
         page_icon="🏋️‍♀️",
         page_title="AI Real-time GYM Coach",
@@ -91,34 +93,60 @@ def main():
 
     initial_session_defaults()
 
+    # ---------------------------------------------------------
+    # INITIALIZE VOICE PIPELINE
+    # ---------------------------------------------------------
+
     if "voice_pipeline" not in st.session_state:
+
         pipeline, pipeline_error = initialize_voice_pipeline()
+
         st.session_state.voice_pipeline = pipeline
         st.session_state.voice_pipeline_error = pipeline_error
 
     if st.session_state.get("voice_pipeline") is None:
+
         with st.sidebar:
-            st.warning("🤖 AI Coach is currently unavailable.")
-            st.caption("Check your GROQ_API_KEY in Streamlit Secrets.")
+
+            st.warning(
+                "🤖 AI Coach is currently unavailable."
+            )
+
+            st.caption(
+                "Check your GROQ_API_KEY in Streamlit Secrets."
+            )
 
     workout_started = st.session_state.get(
         "workout_started",
         False
     )
 
+    # =========================================================
+    # SIDEBAR
+    # =========================================================
+
     with st.sidebar:
-        st.title("🏋️‍♂️ Apna AI Coach")
+
+        st.title("🏋️‍♂️ AI Coach")
 
         if st.session_state.get("username"):
+
             st.caption(
                 f"👤 Login as {st.session_state.username}"
             )
+
             render_logout_button()
 
         st.divider()
+
         st.subheader("Workout Plan")
 
+        # -----------------------------------------------------
+        # BEFORE WORKOUT
+        # -----------------------------------------------------
+
         if not workout_started:
+
             plan_exercise = st.selectbox(
                 "Exercise",
                 options=EXERCISE_OPTIONS,
@@ -150,47 +178,96 @@ def main():
             )
 
             if start_session_button:
+
                 st.session_state.exercise_type = plan_exercise
-                st.session_state.target_sets = int(plan_sets)
-                st.session_state.reps_per_set = int(plan_reps)
+
+                st.session_state.target_sets = int(
+                    plan_sets
+                )
+
+                st.session_state.reps_per_set = int(
+                    plan_reps
+                )
+
                 st.session_state.reps = 0
+
                 st.session_state.workout_started = True
-                st.session_state.set_cycle_started_at = time.time()
+
+                st.session_state.set_cycle_started_at = (
+                    time.time()
+                )
+
                 st.session_state.last_saved_sets_completed = 0
 
+                # ---------------------------------------------
+                # AI WORKOUT START MESSAGE
+                # ---------------------------------------------
+
                 if st.session_state.get("voice_pipeline"):
+
                     try:
-                        result = st.session_state.voice_pipeline.process_event(
-                            event="workout_started",
-                            exercise=plan_exercise,
-                            metrics={}
+
+                        result = (
+                            st.session_state.voice_pipeline
+                            .process_event(
+                                event="workout_started",
+                                exercise=plan_exercise,
+                                metrics={}
+                            )
                         )
 
                         if result:
-                            st.session_state.audio_to_play = result[0]
-                            st.session_state.coach_feedback = result[1]
+
+                            st.session_state.audio_to_play = (
+                                result[0]
+                            )
+
+                            st.session_state.coach_feedback = (
+                                result[1]
+                            )
 
                     except Exception as e:
-                        print("Groq workout_started error:", e)
+
+                        print(
+                            "Groq workout_started error:",
+                            e
+                        )
+
                         st.session_state.coach_feedback = (
                             "Workout started! "
                             "AI coaching is temporarily unavailable."
                         )
+
                 else:
+
                     st.session_state.coach_feedback = (
                         "Workout started! "
                         "AI coaching is currently unavailable."
                     )
 
                 st.session_state.last_notified_sets_completed = 0
+
                 st.session_state.last_notified_workout_complete = False
 
                 st.rerun()
 
+        # -----------------------------------------------------
+        # DURING WORKOUT
+        # -----------------------------------------------------
+
         else:
-            exercise = st.session_state.get("exercise_type")
-            sets = st.session_state.get("target_sets")
-            reps = st.session_state.get("reps_per_set")
+
+            exercise = st.session_state.get(
+                "exercise_type"
+            )
+
+            sets = st.session_state.get(
+                "target_sets"
+            )
+
+            reps = st.session_state.get(
+                "reps_per_set"
+            )
 
             st.info(
                 f"**{exercise}** -- {sets} Sets / {reps} Reps"
@@ -203,22 +280,43 @@ def main():
             )
 
             if end_session_button:
+
                 st.session_state.workout_started = False
 
+                # ---------------------------------------------
+                # AI WORKOUT COMPLETED MESSAGE
+                # ---------------------------------------------
+
                 if st.session_state.get("voice_pipeline"):
+
                     try:
-                        result = st.session_state.voice_pipeline.process_event(
-                            event="workout_completed",
-                            exercise=exercise,
-                            metrics={}
+
+                        result = (
+                            st.session_state.voice_pipeline
+                            .process_event(
+                                event="workout_completed",
+                                exercise=exercise,
+                                metrics={}
+                            )
                         )
 
                         if result:
-                            st.session_state.audio_to_play = result[0]
-                            st.session_state.coach_feedback = result[1]
+
+                            st.session_state.audio_to_play = (
+                                result[0]
+                            )
+
+                            st.session_state.coach_feedback = (
+                                result[1]
+                            )
 
                     except Exception as e:
-                        print("Groq workout_completed error:", e)
+
+                        print(
+                            "Groq workout_completed error:",
+                            e
+                        )
+
                         st.session_state.coach_feedback = (
                             "Workout completed! "
                             "AI coaching is temporarily unavailable."
@@ -226,23 +324,38 @@ def main():
 
                 st.rerun()
 
+        # =====================================================
+        # PROGRESS
+        # =====================================================
+
         if workout_started:
+
             st.divider()
 
-            exercise = st.session_state.get("exercise_type")
-            total_reps = st.session_state.get("reps", 0)
+            exercise = st.session_state.get(
+                "exercise_type"
+            )
+
+            total_reps = st.session_state.get(
+                "reps",
+                0
+            )
+
             current_set_reps = st.session_state.get(
                 "current_set_reps",
                 0
             )
+
             reps_per_set = st.session_state.get(
                 "reps_per_set",
                 0
             )
+
             sets_completed = st.session_state.get(
                 "sets_completed",
                 0
             )
+
             target_sets = st.session_state.get(
                 "target_sets",
                 0
@@ -267,7 +380,12 @@ def main():
 
             st.divider()
 
+            # =================================================
+            # SQUATS
+            # =================================================
+
             if exercise == "Squats":
+
                 st.subheader("Squat Metrics")
 
                 st.metric(
@@ -288,7 +406,12 @@ def main():
                     )
                 )
 
+            # =================================================
+            # PUSH-UPS
+            # =================================================
+
             elif exercise == "Push-ups":
+
                 st.subheader("Push-up Metrics")
 
                 st.metric(
@@ -312,7 +435,12 @@ def main():
                     )
                 )
 
+            # =================================================
+            # BICEPS CURLS
+            # =================================================
+
             elif exercise == "Biceps Curls (Dumbbell)":
+
                 st.subheader("Curl Metrics")
 
                 st.metric(
@@ -336,7 +464,12 @@ def main():
                     )
                 )
 
+            # =================================================
+            # SHOULDER PRESS
+            # =================================================
+
             elif exercise == "Shoulder Press":
+
                 st.subheader("Shoulder Press Metrics")
 
                 st.metric(
@@ -360,7 +493,12 @@ def main():
                     )
                 )
 
+            # =================================================
+            # LUNGES
+            # =================================================
+
             elif exercise == "Lunges":
+
                 st.subheader("Lunge Metrics")
 
                 st.metric(
@@ -381,21 +519,41 @@ def main():
                     )
                 )
 
+    # =========================================================
+    # MAIN PAGE
+    # =========================================================
+
     st.title("AI Real-time GYM Coach")
 
     st.markdown(
         "#### Real-time pose detection with proactive AI voice coaching"
     )
 
+    # =========================================================
+    # AUDIO
+    # =========================================================
+
     if st.session_state.get("audio_to_play"):
+
         try:
+
             autoplay_audio(
                 st.session_state.audio_to_play
             )
+
         except Exception as e:
-            print("Audio playback error:", e)
+
+            print(
+                "Audio playback error:",
+                e
+            )
+
+    # =========================================================
+    # COACH FEEDBACK
+    # =========================================================
 
     if st.session_state.get("coach_feedback"):
+
         st.markdown("")
 
         st.success(
@@ -403,7 +561,12 @@ def main():
             f"{st.session_state.coach_feedback}"
         )
 
+    # =========================================================
+    # CAMERA / WEBRTC
+    # =========================================================
+
     if not workout_started:
+
         st.markdown(
             """
             <div style="
@@ -415,51 +578,152 @@ def main():
                 margin-top: 32px;
                 margin-bottom: 32px;
             ">
+
                 <h2 style="color:#ccc; margin-bottom:8px;">
                     👈 Set your workout plan
                 </h2>
+
                 <p style="font-size:1.05rem;">
+
                     Choose your exercise, sets and reps in the sidebar,
+
                     <br>
+
                     then click <strong>Start Workout</strong>
                     to activate the camera and AI coach.
+
                 </p>
+
             </div>
             """,
-            unsafe_allow_html=True,
+            unsafe_allow_html=True
         )
+
     else:
-        context = webrtc_streamer(
-            key="exercise-analysis",
-            mode=WebRtcMode.SENDRECV,
-            video_processor_factory=VideoProcessorClass,
-            rtc_configuration={
-                "iceServers": [
+
+        # -----------------------------------------------------
+        # WEBRTC CONFIGURATION
+        # -----------------------------------------------------
+        #
+        # STUN helps establish the public network address.
+        #
+        # TURN is optional. If you add TURN credentials to
+        # Streamlit Secrets, they will automatically be used.
+        #
+        # IMPORTANT:
+        # We do NOT continuously call st.rerun() while WebRTC
+        # is playing. Continuous reruns can destroy and recreate
+        # the WebRTC transport and cause aioice/STUN errors.
+        # -----------------------------------------------------
+
+        rtc_configuration = {
+
+            "iceServers": [
+
+                {
+                    "urls": [
+                        "stun:stun.l.google.com:19302"
+                    ]
+                }
+
+            ]
+
+        }
+
+        # -----------------------------------------------------
+        # OPTIONAL TURN SERVER
+        # -----------------------------------------------------
+
+        try:
+
+            turn_url = str(
+                st.secrets.get(
+                    "TURN_URL",
+                    ""
+                )
+            ).strip()
+
+            turn_username = str(
+                st.secrets.get(
+                    "TURN_USERNAME",
+                    ""
+                )
+            ).strip()
+
+            turn_credential = str(
+                st.secrets.get(
+                    "TURN_CREDENTIAL",
+                    ""
+                )
+            ).strip()
+
+            if (
+                turn_url
+                and turn_username
+                and turn_credential
+            ):
+
+                rtc_configuration["iceServers"].append(
                     {
-                        "urls": [
-                            "stun:stun.l.google.com:19302"
-                        ]
+                        "urls": [turn_url],
+                        "username": turn_username,
+                        "credential": turn_credential
                     }
-                ]
-            },
+                )
+
+        except Exception:
+
+            pass
+
+        # -----------------------------------------------------
+        # START WEBRTC
+        # -----------------------------------------------------
+
+        context = webrtc_streamer(
+
+            key="exercise-analysis",
+
+            mode=WebRtcMode.SENDRECV,
+
+            video_processor_factory=VideoProcessorClass,
+
+            rtc_configuration=rtc_configuration,
+
             media_stream_constraints={
                 "video": True,
                 "audio": False
             },
+
             async_processing=True
         )
 
+        # -----------------------------------------------------
+        # SYNC METRICS
+        # -----------------------------------------------------
+
         sync_metrics_update(context)
 
-        if context.state.playing:
-            time.sleep(0.25)
-            st.rerun()
+        # IMPORTANT:
+        # DO NOT DO THIS:
+        #
+        # if context.state.playing:
+        #     time.sleep(0.25)
+        #     st.rerun()
+        #
+        # It can repeatedly destroy/recreate WebRTC and cause
+        # connection timeout / aioice transport errors.
 
         inject_webrtc_styles()
 
+    # =========================================================
+    # WORKOUT HISTORY
+    # =========================================================
+
     st.divider()
 
-    st.markdown("#### Workout History")
+    st.markdown(
+        "#### Workout History"
+    )
 
     user_id = st.session_state.get(
         "user_id",
@@ -467,10 +731,15 @@ def main():
     )
 
     if isinstance(user_id, int):
+
         try:
-            history_rows = get_users_exercises(user_id)
+
+            history_rows = get_users_exercises(
+                user_id
+            )
 
             arr = [
+
                 {
                     "Exercise": row["exercise_name"],
                     "Reps": row["reps"],
@@ -478,21 +747,30 @@ def main():
                     "Time (sec)": row["time"],
                     "Date": row["created_at"]
                 }
+
                 for row in history_rows
+
             ]
 
             df = pd.DataFrame(arr)
 
             if not df.empty:
+
                 df["Date"] = pd.to_datetime(
                     df["Date"]
                 ).dt.date
 
                 agg_df = (
+
                     df
+
                     .groupby(
-                        ["Exercise", "Date"]
+                        [
+                            "Exercise",
+                            "Date"
+                        ]
                     )
+
                     .agg(
                         {
                             "Reps": "sum",
@@ -500,7 +778,9 @@ def main():
                             "Time (sec)": "sum"
                         }
                     )
+
                     .reset_index()
+
                 )
 
                 agg_df.index += 1
@@ -509,12 +789,23 @@ def main():
                     agg_df,
                     border="horizontal"
                 )
+
             else:
-                st.info("No workout history found.")
+
+                st.info(
+                    "No workout history found."
+                )
 
         except Exception as e:
-            print("Workout history error:", e)
-            st.info("Unable to load workout history.")
+
+            print(
+                "Workout history error:",
+                e
+            )
+
+            st.info(
+                "Unable to load workout history."
+            )
 
 
 if __name__ == "__main__":
