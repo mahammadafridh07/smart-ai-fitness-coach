@@ -29,7 +29,7 @@ class LLMCoach:
 
         try:
             response = self.client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="openai/gpt-oss-120b",
                 messages=messages,
                 temperature=0.4,
                 max_completion_tokens=256

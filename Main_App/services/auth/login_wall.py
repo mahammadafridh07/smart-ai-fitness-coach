@@ -60,7 +60,7 @@ def _render_sign_up() -> None:
     st.markdown("### Create your account to get started.")
 
     with st.form("sign_up_form", clear_on_submit=False):
-        username = st.text_input("Username (unique)", placeholder="e.g. princekhunt")
+        username = st.text_input("Username (unique)", placeholder="e.g. mahammadafridh")
         email = st.text_input("Email", placeholder="you@example.com")
         password = st.text_input("Password", type="password")
         confirm_password = st.text_input("Confirm Password", type="password")

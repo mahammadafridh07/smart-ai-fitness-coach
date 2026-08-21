@@ -56,7 +56,7 @@ def initialize_voice_pipeline():
             return None, "GROQ_API_KEY is missing."
 
         llm_coach = LLMCoach(groq_client)
-        tts = TextToSpeech()
+        tts = TextToSpeech(groq_client)
         pipeline = VoicePipeline(llm_coach, tts)
 
         return pipeline, None

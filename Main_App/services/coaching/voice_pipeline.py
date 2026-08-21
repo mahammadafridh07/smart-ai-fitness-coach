@@ -152,6 +152,6 @@ def autoplay_audio(audio_bytes):
 
     st.audio(
         audio_bytes,
-        format="audio/mp3",
+        format="audio/wav",
         autoplay=True
     )
